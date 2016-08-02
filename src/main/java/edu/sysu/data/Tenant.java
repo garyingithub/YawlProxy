@@ -5,7 +5,7 @@ import javax.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.IndexColumn;
 import org.hibernate.annotations.NaturalId;
-
+import edu.sysu.data.YawlService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,9 +28,12 @@ public class Tenant {
     @Column(unique = true)
     private String name;
 
-
     @OneToMany(cascade = {CascadeType.ALL} ,mappedBy = "tenant")
+    private List<YawlService> yawlServices=new ArrayList<>();
+
+    @OneToMany(cascade = {CascadeType.ALL} ,mappedBy = "tenant",fetch = FetchType.EAGER)
     private List<Specification> specifications=new ArrayList<>();
+
 
 
     public Long getTenantId() {

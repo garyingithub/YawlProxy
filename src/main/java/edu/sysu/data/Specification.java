@@ -25,10 +25,21 @@ public class Specification {
     @Column(unique = true,nullable = false)
     private String IdAndVersion;
 
+    @org.hibernate.annotations.Type( type = "text" )
     private String XML;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     private Tenant tenant;
+
+    public String getSpecificationUri() {
+        return specificationUri;
+    }
+
+    public void setSpecificationUri(String specificationUri) {
+        this.specificationUri = specificationUri;
+    }
+
+    private String specificationUri;
 
     public Long getSpecicationId() {
         return specicationId;

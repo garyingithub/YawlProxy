@@ -1,9 +1,7 @@
 package edu.sysu.util;
 
 
-import edu.sysu.data.Tenant;
-import org.hibernate.jpa.boot.internal.EntityManagerFactoryBuilderImpl;
-import org.hibernate.jpa.boot.spi.EntityManagerFactoryBuilder;
+
 
 
 import org.slf4j.Logger;
@@ -15,32 +13,34 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import java.util.ArrayList;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
  * Created by gary on 16-7-27.
  */
+
 public class HibernateUtil {
 
-    private static SessionFactory sessionFactory;
+    private SessionFactory sessionFactory;
 
-    private static Logger logger=LoggerFactory.getLogger(HibernateUtil.class);
+    private Logger logger=LoggerFactory.getLogger(HibernateUtil.class);
 
-    static {
+    private final StandardServiceRegistry registry;
 
-        final StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
+    public HibernateUtil(){
+
+
+        registry = new StandardServiceRegistryBuilder()
                 .configure() // configures settings from hibernate.cfg.xml
                 .build();
+        logger.debug("succeed initializing hibernate");
 
         try {
             sessionFactory=new MetadataSources(registry).buildMetadata().buildSessionFactory();
-
-            logger.debug("succeed initializing hibernate");
 
         }catch (Exception e){
             StandardServiceRegistryBuilder.destroy(registry);
@@ -49,7 +49,7 @@ public class HibernateUtil {
 
     }
 
-    public static void storeObject(Object object){
+    public  void storeObject(Object object){
         Session session=sessionFactory.openSession();
         session.beginTransaction();
         session.save(object);
@@ -58,7 +58,9 @@ public class HibernateUtil {
         logger.debug("successfully store one object");
     }
 
-    public static List getAllObjects(String tableName){
+
+
+    public List getAllObjects(String tableName){
 
         Session session=sessionFactory.openSession();
 
@@ -69,7 +71,32 @@ public class HibernateUtil {
         return result;
     }
 
-    public static void updateObject(Object object){
+    public Map<String,Object> getObjectMap(String tableName,String className,String idName){
+
+        List allObjects=getAllObjects(tableName);
+
+        Map<String,Object> result=new HashMap<>();
+
+        for(int i=0;i<allObjects.size();i++){
+            try {
+                String id= String.valueOf(Class.forName(className).getDeclaredMethod(idName).invoke(allObjects.get(i)));
+                result.put(id,allObjects.get(i));
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }  catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return result;
+    }
+
+    public void updateObject(Object object){
         Session session=sessionFactory.openSession();
         session.beginTransaction();
         session.update(object);
@@ -77,6 +104,9 @@ public class HibernateUtil {
         session.close();
         logger.debug("successfully update one object");
     }
+
+
+
 
 
 

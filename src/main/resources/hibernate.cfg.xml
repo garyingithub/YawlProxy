@@ -29,6 +29,7 @@
     <mapping class="edu.sysu.data.Engine"/>
     <mapping class="edu.sysu.data.Specification"/>
     <mapping class="edu.sysu.data.Tenant"/>
+    <mapping class="edu.sysu.data.YawlService"/>
 
 
   </session-factory>
