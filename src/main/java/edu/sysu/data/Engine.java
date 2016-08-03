@@ -49,7 +49,7 @@ public class Engine {
     @Column(nullable = false)
     private String url;
 
-    @OneToMany(cascade = CascadeType.ALL,mappedBy = "engine")
+    @OneToMany(cascade = CascadeType.ALL,mappedBy = "engine",fetch = FetchType.EAGER)
     List<Case> cases=new ArrayList<>();
 
     @ManyToMany(cascade = CascadeType.ALL)
@@ -72,7 +72,12 @@ public class Engine {
     }
 
 
-
+    public String getIBUri(){
+        return this.getUrl()+"/yawl/ib";
+    }
+    public String getIAUri(){
+        return this.getUrl()+"/yawl/ia";
+    }
 
 
 

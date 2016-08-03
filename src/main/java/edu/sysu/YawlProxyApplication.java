@@ -4,27 +4,14 @@ package edu.sysu;
 import edu.sysu.filter.IAServlet;
 import edu.sysu.filter.IBServlet;
 
-import edu.sysu.util.HibernateUtil;
-import edu.sysu.util.RequestForwarder;
-import edu.sysu.util.SessionUtil;
-import edu.sysu.util.YawlUtil;
-import org.springframework.beans.factory.config.SingletonBeanRegistry;
-import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
+import edu.sysu.filter.ResourceServiceServlet;
+import edu.sysu.util.*;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.embedded.ServletRegistrationBean;
-import org.springframework.boot.context.web.SpringBootServletInitializer;
-import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Scope;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.yawlfoundation.yawl.engine.interfce.EngineGateway;
-import org.yawlfoundation.yawl.engine.interfce.EngineGatewayImpl;
 
-import javax.inject.Singleton;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import java.rmi.Naming;
+import java.lang.reflect.InvocationTargetException;
 
 
 /**
@@ -47,10 +34,7 @@ public class YawlProxyApplication {
     }
 
 
-    @Bean
-    public ReverseProxy reverseProxy(){
-        return new ReverseProxy(hibernateUtil(),yawlUtil());
-    }
+
 
     @Bean
     public RequestForwarder requestForwarder(){
@@ -59,23 +43,30 @@ public class YawlProxyApplication {
 
     @Bean
     public SessionUtil sessionUtil(){
-        return new SessionUtil(reverseProxy(),yawlUtil());
+        return new SessionUtil(requestForwarder(),hibernateUtil());
     }
-
 
     @Bean
-    public YawlUtil yawlUtil(){
-        return new YawlUtil(hibernateUtil());
+    public ProxyUtil reverseProxy(){
+        try {
+            return new ProxyUtil(requestForwarder(),sessionUtil(),hibernateUtil());
+        } catch (ClassNotFoundException | NoSuchMethodException | NoSuchFieldException | IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
     }
+
 
 
     @Bean
     public ServletRegistrationBean servletRegistrationBean() {
-        return new ServletRegistrationBean(new IBServlet(yawlUtil(),sessionUtil(),reverseProxy()),"/yawl/ib/*");
+        return new ServletRegistrationBean(new IBServlet(sessionUtil(),reverseProxy()),"/yawl/ib/*");
     }
 
     @Bean ServletRegistrationBean servletRegistrationBean2(){
-        return new ServletRegistrationBean(new IAServlet(yawlUtil(),sessionUtil(),reverseProxy(),requestForwarder()),"/yawl/ia/*");
+        return new ServletRegistrationBean(new IAServlet(sessionUtil(),reverseProxy(),requestForwarder()),"/yawl/ia/*");
+    }
+    @Bean ServletRegistrationBean servletRegistrationBean3(){
+        return new ServletRegistrationBean(new ResourceServiceServlet(reverseProxy(),requestForwarder()));
     }
 
 

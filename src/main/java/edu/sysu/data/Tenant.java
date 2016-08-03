@@ -59,6 +59,8 @@ public class Tenant {
     public void addSpecification(Specification specification){
         // need to lock the specifications
 
+        if(this.specifications==null)
+            specifications=new ArrayList<>();
         this.specifications.add(specification);
     }
 

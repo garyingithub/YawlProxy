@@ -7,7 +7,7 @@ import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
+import edu.sysu.data.Case;
 /**
  * Created by gary on 16-7-22.
  */
@@ -31,6 +31,20 @@ public class Specification {
     @ManyToOne(fetch = FetchType.EAGER)
     private Tenant tenant;
 
+    @OneToMany(cascade = {CascadeType.ALL} ,mappedBy = "specification",fetch = FetchType.EAGER)
+    private List<edu.sysu.data.Case> cases=new ArrayList<>();
+
+    @ManyToMany(mappedBy = "specifications")
+    private List<Engine> engines=new ArrayList<>();
+
+    public List<Case> getCases() {
+        return cases;
+    }
+
+    public void addCase(edu.sysu.data.Case c){
+        this.cases.add(c);
+    }
+
     public String getSpecificationUri() {
         return specificationUri;
     }
@@ -49,7 +63,14 @@ public class Specification {
         this.specicationId = specicationId;
     }
 
+    public String getSpecId()
+    {
+        return this.getIdAndVersion().split(":")[0];
+    }
 
+    public String getSpecVersion(){
+        return this.getIdAndVersion().split(":")[1];
+    }
 
     public String getXML() {
         return XML;
@@ -77,8 +98,7 @@ public class Specification {
 
 
 
-    @ManyToMany(mappedBy = "specifications")
-    private List<Engine> engines=new ArrayList<>();
+
 
 
     @Override

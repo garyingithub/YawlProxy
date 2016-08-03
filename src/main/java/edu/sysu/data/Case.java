@@ -26,11 +26,10 @@ public class Case {
 
     private String innerId;
 
-    @ManyToOne
-    @JoinColumn(name="specificationId")
+    @ManyToOne(fetch = FetchType.EAGER)
     private Specification specification;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     private Engine engine;
 
     @Override
@@ -89,5 +88,9 @@ public class Case {
 
     public void setEngine(Engine engine) {
         this.engine = engine;
+    }
+
+    public String getEngineIdAndInnerId(){
+        return engine.getEngineId()+":"+getInnerId();
     }
 }

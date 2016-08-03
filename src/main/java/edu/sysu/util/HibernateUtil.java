@@ -29,12 +29,10 @@ public class HibernateUtil {
 
     private Logger logger=LoggerFactory.getLogger(HibernateUtil.class);
 
-    private final StandardServiceRegistry registry;
-
     public HibernateUtil(){
 
 
-        registry = new StandardServiceRegistryBuilder()
+        StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
                 .configure() // configures settings from hibernate.cfg.xml
                 .build();
         logger.debug("succeed initializing hibernate");
@@ -45,11 +43,13 @@ public class HibernateUtil {
         }catch (Exception e){
             StandardServiceRegistryBuilder.destroy(registry);
             logger.debug("fail to initialize hibernate,the cause is {}.",e.toString());
+            throw e;
+
         }
 
     }
 
-    public  void storeObject(Object object){
+    public void storeObject(Object object) {
         Session session=sessionFactory.openSession();
         session.beginTransaction();
         session.save(object);
@@ -71,27 +71,21 @@ public class HibernateUtil {
         return result;
     }
 
-    public Map<String,Object> getObjectMap(String tableName,String className,String idName){
+    public Map<String,Object> getObjectMap(String tableName,String className,String idName) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
 
         List allObjects=getAllObjects(tableName);
 
         Map<String,Object> result=new HashMap<>();
 
-        for(int i=0;i<allObjects.size();i++){
-            try {
-                String id= String.valueOf(Class.forName(className).getDeclaredMethod(idName).invoke(allObjects.get(i)));
-                result.put(id,allObjects.get(i));
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }  catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            }
 
+        for (Object allObject : allObjects) {
+            String id = String.valueOf(Class.forName(className).
+                    getDeclaredMethod(idName).
+                    invoke(allObject));
+            result.put(id, allObject);
         }
+
+
 
         return result;
     }
@@ -103,6 +97,15 @@ public class HibernateUtil {
         session.getTransaction().commit();
         session.close();
         logger.debug("successfully update one object");
+    }
+
+    public void deleteObject(Object object){
+        Session session=sessionFactory.openSession();
+        session.beginTransaction();
+        session.delete(object);
+        session.getTransaction().commit();
+        session.close();
+        logger.debug(String.format("delete an %s",object.getClass().getName()));
     }
 
 

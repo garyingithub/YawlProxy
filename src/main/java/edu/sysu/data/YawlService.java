@@ -20,6 +20,44 @@ public class YawlService {
     @NaturalId
     private String uri;
 
+    private String name;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public String getUri() {
+        return uri;
+    }
+
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Tenant getTenant() {
+        return tenant;
+    }
+
+    public void setTenant(Tenant tenant) {
+        this.tenant = tenant;
+    }
+
+    public String getTenantIdAndName(){
+        return this.tenant.getTenantId()+":"+name;
+    }
+
     @ManyToOne
     private Tenant tenant;
 

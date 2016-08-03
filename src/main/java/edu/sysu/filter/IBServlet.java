@@ -2,15 +2,14 @@ package edu.sysu.filter;
 
 
 
-import edu.sysu.ReverseProxy;
+import edu.sysu.util.ProxyUtil;
+import edu.sysu.data.Engine;
+import edu.sysu.data.Specification;
 import edu.sysu.data.Tenant;
-import edu.sysu.util.HibernateUtil;
 import edu.sysu.util.SessionUtil;
 import edu.sysu.util.YawlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yawlfoundation.yawl.engine.YSpecificationID;
-import sun.util.calendar.BaseCalendar;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -19,7 +18,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.*;
 
 /**
  * Created by gary on 16-7-29.
@@ -30,7 +28,7 @@ public class IBServlet extends HttpServlet{
     Logger logger= LoggerFactory.getLogger(this.getClass());
     YawlUtil yawlUtil;
     SessionUtil sessionUtil;
-    ReverseProxy reverseProxy;
+    ProxyUtil proxyUtil;
 
 
     private OutputStreamWriter prepareResponse(HttpServletResponse response) throws IOException {
@@ -59,6 +57,7 @@ public class IBServlet extends HttpServlet{
         logger.info(req.getMethod());
         logger.info(req.getParameter("action"));
 
+
         OutputStreamWriter outputWriter = this.prepareResponse(resp);
         StringBuilder output = new StringBuilder();
         output.append("<response>");
@@ -83,6 +82,7 @@ public class IBServlet extends HttpServlet{
         {
             tenant_id_string="2";
         }
+        else
          tenant_id_string = folders[3];
 
 
@@ -102,7 +102,7 @@ public class IBServlet extends HttpServlet{
         if(action!=null)
             switch (action){
                 case "connect":
-                    Tenant tenant= reverseProxy.getTenant(tenant_id_string);
+                    Tenant tenant= proxyUtil.getTenant(tenant_id_string);
                     msg.append(sessionUtil.connectToProxy(tenant,userId));
 
                     break;
@@ -113,9 +113,14 @@ public class IBServlet extends HttpServlet{
                     msg.append("<success/>");
                     break;
                 case "getSpecificationPrototypesList":
-                    msg.append(reverseProxy.getSpecificationList());
+                    msg.append(proxyUtil.getSpecificationList(tenant));
                     break;
                 case "launchCase":
+
+                    Specification specification= proxyUtil.getSpecificationByIdAndVersion(specIdentifier+":"+specVersion);
+                    Engine engine= proxyUtil.getTargetEngine();
+
+                    msg.append(proxyUtil.launchCase(specification,engine));
 
 
                     break;
@@ -136,10 +141,10 @@ public class IBServlet extends HttpServlet{
         return msg.toString();
     }
 
-    public IBServlet(YawlUtil yawlUtil,SessionUtil sessionUtil,ReverseProxy reverseProxy){
+    public IBServlet(YawlUtil yawlUtil,SessionUtil sessionUtil,ProxyUtil proxyUtil){
         this.yawlUtil=yawlUtil;
         this.sessionUtil=sessionUtil;
-        this.reverseProxy=reverseProxy;
+        this.proxyUtil = proxyUtil;
     }
 
 

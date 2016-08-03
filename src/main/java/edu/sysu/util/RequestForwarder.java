@@ -20,7 +20,7 @@ public class RequestForwarder extends Interface_Client {
         String result;
 
 
-        result = executePost(urlDestination, parameterMap);
+        result = executePost("http://"+urlDestination, parameterMap);
 
 
         return result;
