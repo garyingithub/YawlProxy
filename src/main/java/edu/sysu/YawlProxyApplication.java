@@ -52,6 +52,7 @@ public class YawlProxyApplication {
             return new ProxyUtil(requestForwarder(),sessionUtil(),hibernateUtil());
         } catch (ClassNotFoundException | NoSuchMethodException | NoSuchFieldException | IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
+            return null;
         }
     }
 
@@ -63,7 +64,7 @@ public class YawlProxyApplication {
     }
 
     @Bean ServletRegistrationBean servletRegistrationBean2(){
-        return new ServletRegistrationBean(new IAServlet(sessionUtil(),reverseProxy(),requestForwarder()),"/yawl/ia/*");
+        return new ServletRegistrationBean(new IAServlet(sessionUtil(),reverseProxy()),"/yawl/ia/*");
     }
     @Bean ServletRegistrationBean servletRegistrationBean3(){
         return new ServletRegistrationBean(new ResourceServiceServlet(reverseProxy(),requestForwarder()));

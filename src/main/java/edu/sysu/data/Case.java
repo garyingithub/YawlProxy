@@ -3,6 +3,7 @@ package edu.sysu.data;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.NaturalId;
+import org.yawlfoundation.yawl.util.XNode;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -92,5 +93,22 @@ public class Case {
 
     public String getEngineIdAndInnerId(){
         return engine.getEngineId()+":"+getInnerId();
+    }
+
+    public String getSpecificationForCaseResponse(){
+        return this.getSpecification().getXML();
+    }
+
+    public String getSpecificationIDForCaseResponse(){
+        Specification specification=this.getSpecification();
+
+        XNode node = new XNode("specificationid");
+        if (specification.getSpecId() != null) {
+            node.addChild("identifier", specification.getSpecId());
+        }
+        node.addChild("version", specification.getSpecVersion());
+        node.addChild("uri", specification.getSpecificationUri());
+
+        return node.toString();
     }
 }

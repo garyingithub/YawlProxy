@@ -84,7 +84,7 @@ public class SessionUtil {
     }
 
     private String connectToEngineAsAdmin(Engine engine) throws IOException {
-        return connectToEngine(engine, "admin", "Se4tMaQCi9gr0Q2usp7P56Sk5vM");
+        return connectToEngine(engine, "admin", "Se4tMaQCi9gr0Q2usp7P56Sk5vM=");
     }
 
 

@@ -7,8 +7,11 @@ import edu.sysu.util.SessionUtil;
 import edu.sysu.util.YawlUtil;
 import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
 import java.io.IOException;
@@ -33,7 +36,7 @@ public class ProxyUtil {
     private Map<String,Object> yawlServices;
 
 
-    public final String encryptedAdminPassword="Se4tMaQCi9gr0Q2usp7P56Sk5vM";
+    public final String encryptedAdminPassword="Se4tMaQCi9gr0Q2usp7P56Sk5vM=";
 
 
     private org.slf4j.Logger logger= LoggerFactory.getLogger(this.getClass());
@@ -64,8 +67,8 @@ public class ProxyUtil {
             this.storeObject("edu.sysu.data.Tenant","getTenantId","tenants",tenant);
 
             Tenant tenant1=new Tenant();
-            tenant.setName("Gary");
-            hibernateUtil.storeObject(tenant1);
+            tenant1.setName("Gary");
+
             this.storeObject("edu.sysu.data.Tenant","getTenantId","tenants",tenant1);
 
             Engine engine=new Engine();
@@ -75,7 +78,11 @@ public class ProxyUtil {
             YawlService yawlService=new YawlService();
             yawlService.setName("resourceService");
             yawlService.setUri("192.168.199.175:8086");
-            yawlService.setTenant(tenant);
+            yawlService.setDocument("resource");
+            yawlService.setPassword("resource");
+            yawlService.setTenant(tenant1);
+
+
             this.storeObject("edu.sysu.data.YawlService","getTenantIdAndName","yawlServices",yawlService);
 
 
@@ -85,13 +92,18 @@ public class ProxyUtil {
 
 
     public Tenant getTenantByCaseId(String caseId){
-        Case c= (Case) cases.get(caseId);
+        Case c= this.getCaseByEngineIdAndInnerId(caseId);
+
         return c.getSpecification().getTenant();
     }
 
     public Tenant getTenantBySpecificationNaturalId(String specificationNaturalId){
         Specification specification= (Specification) this.specifications.get(specificationNaturalId);
         return specification.getTenant();
+    }
+
+    public Tenant getTenantById(String tenantId){
+        return (Tenant) this.tenants.get(tenantId);
     }
 
 
@@ -115,38 +127,31 @@ public class ProxyUtil {
         logger.debug(String.format("get specification by %s",idAndVersion));
         return (Specification) specifications.get(idAndVersion);
     }
-    public String getSpecificationList(Tenant tenant){
-        List<Specification> specificationList=tenant.getSpecifications();
-        Set<YSpecification> result=new HashSet<>();
-        for (Specification aSpecificationList : specificationList) {
-            List<YSpecification> temp = new ArrayList<>();
-            try {
-                temp = YMarshal.unmarshalSpecifications(aSpecificationList.getXML());
-            } catch (YSyntaxException e) {
-                e.printStackTrace();
-            }
-            result.addAll(temp);
-        }
-        return YawlUtil.getDataForSpecifications(result);
-    }
+
 
 
     public YawlService getYawlServiceByTenantIdAndName(String tenantIdAndName){
         return (YawlService) this.yawlServices.get(tenantIdAndName);
     }
 
+
+
     public Case getCaseByEngineIdAndInnerId(String EngineIdAndInnerId){
-        return (Case) cases.get(EngineIdAndInnerId);
+       Case c=  (Case) cases.get(EngineIdAndInnerId);
+        // in case that the announceCaseStart arrive before launchCase finish
+        while (c==null){
+            c= (Case) cases.get(EngineIdAndInnerId);
+        }
+
+        return c;
     }
 
-
-
-
     public void storeObject(String  className,String idName,String rpFieldName,Object object) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
-        hibernateUtil.storeObject(object);
 
+        hibernateUtil.storeObject(object);
         Map<String,Object> map= (Map<String, Object>) this.getClass().getDeclaredField(rpFieldName).get(this);
         map.put(Class.forName(className).getDeclaredMethod(idName).invoke(object).toString(),object);
+
         logger.debug("store an %s ",className);
 
 
@@ -169,7 +174,7 @@ public class ProxyUtil {
         if(result.contains("failure")&&result.contains("warning"))
             return;
 
-        throw new IOException(result);
+        //throw new IOException(result);
 
 
 
@@ -208,30 +213,24 @@ public class ProxyUtil {
         c.setSpecification(specification);
         c.setEngine(engine);
         c.setOuterId(caseInnerId);
+
         specification.addCase(c);
         engine.addCase(c);
-        this.storeObject("edu.sysu.data.Case","getEngineIdAndInnerId","cases",c);
-        hibernateUtil.updateObject(engine);
-        hibernateUtil.updateObject(specification);
-
-        return result;
-
-    }
-
-    public String getAllRunningCases(Tenant tenant){
-        String result="<AllRunningCases>";
-        for(Specification specification:tenant.getSpecifications()){
-            result+=String.format(" <specificationID identifier='%s' version='%s' uri='%s'>",specification.getIdAndVersion().split(":")[0],
-                    specification.getIdAndVersion().split(":")[1],
-                    specification.getSpecificationUri());
-            for(edu.sysu.data.Case c:specification.getCases()){
-                result+=String .format(" <caseID>%s</caseID> ",c.getCaseId());
-            }
-            result+=" </AllRunningCases>";
+        try {
+            this.storeObject("edu.sysu.data.Case","getEngineIdAndInnerId","cases",c);
+            hibernateUtil.updateObject(engine);
+            hibernateUtil.updateObject(specification);
+        }catch (Exception ex){
+            return ex.getMessage();
         }
-        result+=" </AllRunningCases>";
+
+
+
         return result;
+
     }
+
+
     public String loadSpecification(String specXML, Tenant tenant) {
 
         YVerificationHandler verificationHandler = new YVerificationHandler();

@@ -23,65 +23,18 @@ import java.security.NoSuchAlgorithmException;
  * Created by gary on 16-7-29.
  */
 @WebServlet(urlPatterns = "/yawl/ia/*")
-public class IAServlet extends HttpServlet{
+public class IAServlet extends BaseServlet{
 
-    Logger logger= LoggerFactory.getLogger(this.getClass());
-
-    private OutputStreamWriter prepareResponse(HttpServletResponse response) throws IOException {
-        response.setContentType("text/xml; charset=UTF-8");
-        return new OutputStreamWriter(response.getOutputStream(), "UTF-8");
-    }
+    private SessionUtil sessionUtil;
+    private ProxyUtil proxyUtil;
 
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-
-        logger.info(req.getRequestURI());
-        logger.info(req.getMethod());
-        logger.info(req.getQueryString());
-
-
-
-        doPost(req,resp);
-    }
-
-    private RequestForwarder requestForwarder;
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-        logger.info(req.getRequestURI());
-        logger.info(req.getMethod());
-        logger.info(req.getQueryString());
-
-
-        OutputStreamWriter outputWriter = this.prepareResponse(resp);
-        StringBuilder output = new StringBuilder();
-        output.append("<response>");
-        try {
-            output.append(processPostQuery(req));
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        output.append("</response>");
-
-
-        outputWriter.write(output.toString());
-        outputWriter.flush();
-        outputWriter.close();
-
-
-    }
-
-    SessionUtil sessionUtil;
-    ProxyUtil proxyUtil;
-    YawlUtil yawlUtil;
-    private String processPostQuery(HttpServletRequest request) throws IOException, NoSuchAlgorithmException {
+    String processPostQuery(HttpServletRequest request){
         String[] folders = request.getRequestURI().split("/");
         String tenant_id_string="";
         if (folders.length<=3)
         {
-            tenant_id_string="2";
+            tenant_id_string="0";
         }
         else
              tenant_id_string = folders[3];
@@ -94,34 +47,35 @@ public class IAServlet extends HttpServlet{
 
         Tenant tenant=null;
         if(tenant_id_string!=null){
-            tenant= proxyUtil.getTenant(tenant_id_string);
+            tenant= proxyUtil.getTenantById(tenant_id_string);
         }
+
+
         if(action!=null)
         switch (action){
             case "connect":
-
                 msg.append(sessionUtil.connectToProxy(tenant,userID));
                 break;
-            case "checkSession":
-                msg.append("<success/>");
-                break;
             case "disconnect":
-                msg.append("<success/>");
+            case "checkConnection":
+                msg.append(YawlUtil.successMessage(""));
                 break;
             case "upload":
                 String specXML=request.getParameter("specXML");
 
                 String result= proxyUtil.loadSpecification(specXML,tenant);
                 if(result.isEmpty()){
-                    msg.append(yawlUtil.successMessage(""));
+                    msg.append(YawlUtil.successMessage(""));
                 }
                 else {
-                    msg.append(yawlUtil.failureMessage(result));
+                    msg.append(YawlUtil.failureMessage(result));
                 }
                 break;
             case "getList":
+                msg.append(tenant.getSpecificationListResponse());
                 break;
             case "getYAWLServices":
+                msg.append(tenant.getYawlServicesResponse());
                 break;
             case "getPassword":
                 if(userID.equals("admin"))
@@ -130,7 +84,7 @@ public class IAServlet extends HttpServlet{
                     msg.append("VfrZ/SW35S1ytFXq9Giw7+A05wA=");
                 break;
             case "getBuildProperties":
-                msg.append(yawlUtil.getBuildProperties());
+                msg.append(YawlUtil.getBuildProperties());
                 break;
 
         }
@@ -138,11 +92,11 @@ public class IAServlet extends HttpServlet{
         return msg.toString();
     }
 
-    public IAServlet(YawlUtil yawlUtil, SessionUtil sessionUtil, ProxyUtil proxyUtil, RequestForwarder requestForwarder){
-        this.yawlUtil=yawlUtil;
+    public IAServlet(SessionUtil sessionUtil, ProxyUtil proxyUtil ){
+
         this.sessionUtil=sessionUtil;
         this.proxyUtil = proxyUtil;
-        this.requestForwarder=requestForwarder;
+
     }
 
 

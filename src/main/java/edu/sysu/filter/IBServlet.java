@@ -2,85 +2,35 @@ package edu.sysu.filter;
 
 
 
-import edu.sysu.util.ProxyUtil;
 import edu.sysu.data.Engine;
 import edu.sysu.data.Specification;
 import edu.sysu.data.Tenant;
+import edu.sysu.util.ProxyUtil;
 import edu.sysu.util.SessionUtil;
 import edu.sysu.util.YawlUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Created by gary on 16-7-29.
  */
 @WebServlet(urlPatterns = "/yawl/ib/*")
-public class IBServlet extends HttpServlet{
+public class IBServlet extends BaseServlet{
 
-    Logger logger= LoggerFactory.getLogger(this.getClass());
-    YawlUtil yawlUtil;
-    SessionUtil sessionUtil;
-    ProxyUtil proxyUtil;
+    private SessionUtil sessionUtil;
+    private ProxyUtil proxyUtil;
 
 
-    private OutputStreamWriter prepareResponse(HttpServletResponse response) throws IOException {
-        response.setContentType("text/xml; charset=UTF-8");
-        return new OutputStreamWriter(response.getOutputStream(), "UTF-8");
-    }
-
-
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-
-        logger.info(req.getRequestURI());
-        logger.info(req.getMethod());
-        logger.info(req.getParameter("action"));
-
-
-
-        doPost(req,resp);
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-        logger.info(req.getRequestURI());
-        logger.info(req.getMethod());
-        logger.info(req.getParameter("action"));
-
-
-        OutputStreamWriter outputWriter = this.prepareResponse(resp);
-        StringBuilder output = new StringBuilder();
-        output.append("<response>");
-        output.append(processPostQuery(req));
-        output.append("</response>");
-
-
-        outputWriter.write(output.toString());
-        outputWriter.flush();
-        outputWriter.close();
-
-
-    }
-
-
-
-    private String processPostQuery(HttpServletRequest request) throws IOException {
+    String processPostQuery(HttpServletRequest request) {
 
         String[] folders = request.getRequestURI().split("/");
-        String tenant_id_string = "";
+        String tenant_id_string;
         if (folders.length<=3)
         {
-            tenant_id_string="2";
+            tenant_id_string="0";
         }
         else
          tenant_id_string = folders[3];
@@ -97,43 +47,50 @@ public class IBServlet extends HttpServlet{
         String userId=request.getParameter("userid");
         String password=request.getParameter("password");
 
+        Specification specification=proxyUtil.getSpecificationByIdAndVersion(specIdentifier+":"+specVersion);
 
+        Tenant tenant= proxyUtil.getTenantById(tenant_id_string);
 
         if(action!=null)
             switch (action){
                 case "connect":
-                    Tenant tenant= proxyUtil.getTenant(tenant_id_string);
                     msg.append(sessionUtil.connectToProxy(tenant,userId));
-
                     break;
-                case "checkSession":
-                    msg.append("<success/>");
+                case "checkConnection":
+                    msg.append(YawlUtil.successMessage(""));
                     break;
                 case "disconnect":
                     msg.append("<success/>");
                     break;
                 case "getSpecificationPrototypesList":
-                    msg.append(proxyUtil.getSpecificationList(tenant));
+                    msg.append(tenant.getSpecificationListResponse());
                     break;
+                case "getSpecification":
+                    if (specification == null) {
+                        msg.append(YawlUtil.failureMessage("No specification found for id: " + specIdentifier));
+                    }else
+                        msg.append(specification.getXML());
                 case "launchCase":
 
-                    Specification specification= proxyUtil.getSpecificationByIdAndVersion(specIdentifier+":"+specVersion);
-                    Engine engine= proxyUtil.getTargetEngine();
-
-                    msg.append(proxyUtil.launchCase(specification,engine));
-
-
+                   Engine engine= proxyUtil.getTargetEngine();
+                    try {
+                        msg.append(proxyUtil.launchCase(specification,engine));
+                    } catch (ClassNotFoundException | NoSuchMethodException | NoSuchFieldException | InvocationTargetException | IllegalAccessException | IOException e) {
+                   //     e.printStackTrace();
+                        msg.append(YawlUtil.failureMessage(e.getMessage()));
+                    }
                     break;
                 case "startOne":
                     break;
                 case "getLiveItems":
                     break;
                 case "getAllRunningCases":
+                    msg.append(tenant.getAllRunningCasesResponse());
                     break;
 
             }else{
             if(request.getRequestURI().endsWith("ib")){
-                msg.append(yawlUtil.successMessage(""));
+                msg.append(YawlUtil.successMessage(""));
             }
         }
 
@@ -141,8 +98,8 @@ public class IBServlet extends HttpServlet{
         return msg.toString();
     }
 
-    public IBServlet(YawlUtil yawlUtil,SessionUtil sessionUtil,ProxyUtil proxyUtil){
-        this.yawlUtil=yawlUtil;
+    public IBServlet(SessionUtil sessionUtil,ProxyUtil proxyUtil){
+
         this.sessionUtil=sessionUtil;
         this.proxyUtil = proxyUtil;
     }

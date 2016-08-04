@@ -125,6 +125,15 @@ public class Specification {
 
 
 
+    public String getCasesForSpecificationResponse(){
+        StringBuilder builder=new StringBuilder();
+        for(edu.sysu.data.Case c:this.getCases()){
+            builder.append("<caseID>");
+            builder.append(c.getCaseId().toString());
+            builder.append("</caseID>");
+        }
+        return builder.toString();
+    }
 
 
 

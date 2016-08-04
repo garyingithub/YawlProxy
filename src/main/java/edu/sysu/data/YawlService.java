@@ -22,6 +22,29 @@ public class YawlService {
 
     private String name;
 
+
+    public String getDocument() {
+        return document;
+    }
+
+    public void setDocument(String document) {
+        this.document = document;
+    }
+
+    @org.hibernate.annotations.Type( type = "text" )
+    private String document;
+
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    private String password;
+
     public long getId() {
         return id;
     }
