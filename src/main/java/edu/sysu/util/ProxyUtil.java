@@ -1,11 +1,13 @@
 package edu.sysu.util;
 
 import edu.sysu.data.*;
+import edu.sysu.data.repositories.TenantRepository;
 import edu.sysu.util.HibernateUtil;
 import edu.sysu.util.RequestForwarder;
 import edu.sysu.util.SessionUtil;
 import edu.sysu.util.YawlUtil;
 import org.slf4j.LoggerFactory;
+import org.yawlfoundation.yawl.elements.YAWLServiceReference;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
@@ -43,13 +45,16 @@ public class ProxyUtil {
 
     private HibernateUtil hibernateUtil;
 
+
     public ProxyUtil( RequestForwarder requestForwarder, SessionUtil sessionUtil, HibernateUtil hibernateUtil) throws ClassNotFoundException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InvocationTargetException {
+
 
         this.requestForwarder = requestForwarder;
         this.sessionUtil = sessionUtil;
         this.hibernateUtil = hibernateUtil;
 
         try {
+
             engines= hibernateUtil.getObjectMap("Engine","edu.sysu.data.Engine","getEngineId");
             tenants= hibernateUtil.getObjectMap("Tenant","edu.sysu.data.Tenant","getTenantId");
             specifications=hibernateUtil.getObjectMap("Specification","edu.sysu.data.Specification","getIdAndVersion");
@@ -72,12 +77,16 @@ public class ProxyUtil {
             this.storeObject("edu.sysu.data.Tenant","getTenantId","tenants",tenant1);
 
             Engine engine=new Engine();
-            engine.setUrl("192.168.199.175:8086");
+            engine.setUrl("http://192.168.199.175:8086");
             this.storeObject("edu.sysu.data.Engine","getEngineId","engines",engine);
+
+            Engine engine1=new Engine();
+            engine1.setUrl("http://192.168.199.201:8080");
+            this.storeObject("edu.sysu.data.Engine","getEngineId","engines",engine1);
 
             YawlService yawlService=new YawlService();
             yawlService.setName("resourceService");
-            yawlService.setUri("192.168.199.175:8086");
+            yawlService.setUri("http://192.168.199.175:8086/resourceService/ib");
             yawlService.setDocument("resource");
             yawlService.setPassword("resource");
             yawlService.setTenant(tenant1);
@@ -111,9 +120,11 @@ public class ProxyUtil {
     private Map getEngines(){
         return this.engines;
     }
-
+    Random random=new Random();
     public Engine getTargetEngine(){
-        return (Engine) engines.values().toArray()[0];
+
+
+        return (Engine) engines.values().toArray()[Math.abs(random.nextInt())%1];
     }
 
 
@@ -159,6 +170,22 @@ public class ProxyUtil {
 
     private RequestForwarder requestForwarder;
     private SessionUtil sessionUtil;
+
+
+    private void registerYawlService(YawlService yawlService,Engine engine) throws IOException {
+        YAWLServiceReference serviceReference=new YAWLServiceReference(yawlService.getUri(),
+                null,yawlService.getName(),yawlService.getDocument());
+        Map<String,String > params=new HashMap<>();
+        params.put("action","newYAWLService");
+        params.put("sessionHandle",sessionUtil.getAdminSession(engine));
+        params.put("service",serviceReference.toXMLComplete());
+        String result=requestForwarder.forwardRequest(engine.getIAUri(),params);
+        if(!result.contains("already")&&result.contains("failure")){
+            throw new IOException(result);
+        }
+    }
+
+
     private void uploadSpecification(Specification specification,Engine engine) throws IOException {
         Map<String,String> params=new HashMap<>();
         params.put("action","upload");
@@ -181,11 +208,13 @@ public class ProxyUtil {
 
     }
 
-    public String launchCase(Specification specification,Engine engine) throws IOException, ClassNotFoundException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InvocationTargetException {
+    public String launchCase(Specification specification,Engine engine,YawlService yawlService) throws IOException, ClassNotFoundException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InvocationTargetException {
 
         uploadSpecification(specification,engine);
 
-        String sessionHandle=sessionUtil.getAdminSession(engine);
+        registerYawlService(yawlService,engine);
+
+        String sessionHandle=sessionUtil.connectToEngineAsService(engine,yawlService);
         Map<String,String> params=new HashMap<>();
         String specId=specification.getSpecId();
         String specVersion=specification.getSpecVersion();
@@ -196,7 +225,7 @@ public class ProxyUtil {
         params.put("sessionHandle",sessionHandle);
         params.put("specuri",specification.getSpecificationUri());
         params.put("specversion",specVersion);
-
+    //    params.put("completionObserverURI","http://192.168.199.175:8080/service");
 
         String result="";
 
@@ -212,9 +241,10 @@ public class ProxyUtil {
         c.setInnerId(caseInnerId);
         c.setSpecification(specification);
         c.setEngine(engine);
-        c.setOuterId(caseInnerId);
+
 
         specification.addCase(c);
+
         engine.addCase(c);
         try {
             this.storeObject("edu.sysu.data.Case","getEngineIdAndInnerId","cases",c);
@@ -226,7 +256,7 @@ public class ProxyUtil {
 
 
 
-        return result;
+        return result+"~"+engine.getIBUri()+"~"+sessionHandle;
 
     }
 
@@ -256,6 +286,7 @@ public class ProxyUtil {
                     spec.setXML(YMarshal.marshal(specification));
                     spec.setTenant(tenant);
                     spec.setSpecificationUri(specification.getURI());
+                    this.specifications.put(spec.getIdAndVersion(),spec);
                     tenant.addSpecification(spec);
                     hibernateUtil.updateObject(tenant);
                 }
@@ -263,6 +294,36 @@ public class ProxyUtil {
         }
         return "";
 
+    }
+
+    public void completeCase(edu.sysu.data.Case c){
+        c.getSpecification().getCases().remove(c);
+        c.getEngine().getCases().remove(c);
+        hibernateUtil.deleteObject(c);
+    }
+
+    public edu.sysu.data.Case getCaseById(String caseId){
+        for(Object o:this.cases.values()){
+            edu.sysu.data.Case c=(edu.sysu.data.Case)o;
+            if(caseId.equals(c.getCaseId().toString())){
+                return c;
+            }
+        }
+        return null;
+    }
+    public String cancelCase(edu.sysu.data.Case c){
+        Map<String,String> params=new HashMap<>();
+        params.put("action","cancelCase");
+        params.put("caseID",c.getInnerId());
+
+        String result="";
+        try {
+            params.put("sessionHandle",sessionUtil.getAdminSession(c.getEngine()));
+            result=requestForwarder.forwardRequest(c.getEngine().getIBUri(),params);
+        } catch (IOException e) {
+            return YawlUtil.failureMessage(e.getMessage());
+        }
+        return result;
     }
 
 

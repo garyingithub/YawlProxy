@@ -22,8 +22,8 @@ import java.util.*;
 public class Tenant {
 
     @Id
-    @GeneratedValue(generator = "increment")
-    @GenericGenerator(name = "increment",strategy = "increment")
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    //@GenericGenerator(name = "increment",strategy = "increment")
     private Long tenantId;
 
     @NaturalId
@@ -64,11 +64,16 @@ public class Tenant {
         return specifications;
     }
 
+    public Tenant(String name) {
+        this.name = name;
+    }
+
     public void addSpecification(Specification specification){
         // need to lock the specifications
 
         if(this.specifications==null)
             specifications=new ArrayList<>();
+
         this.specifications.add(specification);
     }
 
@@ -80,6 +85,7 @@ public class Tenant {
 
     }
 
+    @Transient
     public String getSpecificationListResponse(){
 
         List<Specification> specificationList=this.getSpecifications();
@@ -96,6 +102,7 @@ public class Tenant {
         return YawlUtil.getDataForSpecifications(result);
     }
 
+    @Transient
     public String getYawlServicesResponse(){
         StringBuilder builder=new StringBuilder();
         for(YawlService yawlService:this.getYawlServices()){
@@ -112,6 +119,7 @@ public class Tenant {
         return builder.toString();
     }
 
+    @Transient
     public String getAllRunningCasesResponse(){
 
 

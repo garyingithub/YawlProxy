@@ -2,6 +2,7 @@ package edu.sysu.util;
 
 import edu.sysu.data.Engine;
 import edu.sysu.data.Tenant;
+import edu.sysu.data.YawlService;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -85,6 +86,10 @@ public class SessionUtil {
 
     private String connectToEngineAsAdmin(Engine engine) throws IOException {
         return connectToEngine(engine, "admin", "Se4tMaQCi9gr0Q2usp7P56Sk5vM=");
+    }
+
+    public String connectToEngineAsService(Engine engine, YawlService service) throws IOException {
+        return connectToEngine(engine,service.getName(),service.getPassword());
     }
 
 

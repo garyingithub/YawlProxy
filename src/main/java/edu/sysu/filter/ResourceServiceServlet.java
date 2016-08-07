@@ -11,9 +11,7 @@ import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by gary on 16-7-31.
@@ -35,7 +33,6 @@ public class ResourceServiceServlet extends BaseServlet{
 
         String action = request.getParameter("action");
 
-        String workItemXML = request.getParameter("workItem");
         String specificationId=request.getParameter("specidentifier");
         String specVersion=request.getParameter("specversion");
         String caseId=request.getParameter("caseID");
@@ -43,17 +40,12 @@ public class ResourceServiceServlet extends BaseServlet{
 
         Tenant tenant=null;
 
-        WorkItemRecord workItem = (workItemXML != null) ?
-                Marshaller.unmarshalWorkItem(workItemXML) : null;
-        if(workItemXML!=null){
-            caseId=workItem.getRootCaseID();
-        }
 
         if(caseId!=null){
             tenant= proxyUtil.getTenantByCaseId(engine_id_string+":"+caseId);
         }
 
-        if(specificationId!=null){
+        if(tenant==null&&specificationId!=null){
             tenant= proxyUtil.getTenantBySpecificationNaturalId(specificationId+":"+specVersion);
         }
 
@@ -61,8 +53,7 @@ public class ResourceServiceServlet extends BaseServlet{
             return YawlUtil.successMessage("");
         }
 
-        YawlService yawlService= proxyUtil.getYawlServiceByTenantIdAndName(
-                tenant.getTenantId()+":"+"resourceService");
+        Set<YawlService> yawlServiceSet=tenant.getYawlServices();
 
         Map<String,String> params=new HashMap<>();
 
@@ -82,9 +73,23 @@ public class ResourceServiceServlet extends BaseServlet{
 
         String response="";
         try {
-            response=requestForwarder.forwardRequest(yawlService.getUri()+"/resourceService"+"/ib",params);
+            for(YawlService yawlService:yawlServiceSet){
+                response=requestForwarder.forwardRequest(yawlService.getUri(),params);
+            }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+        if(action!=null){
+
+            switch (action){
+                case "announceCaseCompleted":
+                    edu.sysu.data.Case c=proxyUtil.
+                            getCaseByEngineIdAndInnerId(engine_id_string+":"+caseId);
+                    if(c!=null)
+                        proxyUtil.completeCase(c);
+                    break;
+
+            }
         }
         return response;
     }

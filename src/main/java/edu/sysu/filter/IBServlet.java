@@ -5,6 +5,7 @@ package edu.sysu.filter;
 import edu.sysu.data.Engine;
 import edu.sysu.data.Specification;
 import edu.sysu.data.Tenant;
+import edu.sysu.data.YawlService;
 import edu.sysu.util.ProxyUtil;
 import edu.sysu.util.SessionUtil;
 import edu.sysu.util.YawlUtil;
@@ -47,6 +48,7 @@ public class IBServlet extends BaseServlet{
         String userId=request.getParameter("userid");
         String password=request.getParameter("password");
 
+        String caseId=request.getParameter("caseID");
         Specification specification=proxyUtil.getSpecificationByIdAndVersion(specIdentifier+":"+specVersion);
 
         Tenant tenant= proxyUtil.getTenantById(tenant_id_string);
@@ -72,9 +74,20 @@ public class IBServlet extends BaseServlet{
                         msg.append(specification.getXML());
                 case "launchCase":
 
-                   Engine engine= proxyUtil.getTargetEngine();
+
+                    Engine engine= proxyUtil.getTargetEngine();
                     try {
-                        msg.append(proxyUtil.launchCase(specification,engine));
+                        if(tenant.getYawlServices()==null||tenant.getYawlServices().size()==0){
+                            YawlService service=new YawlService();
+                            service.setName("DefaultWorkList");
+                            service.setPassword("resource");
+                            service.setUri("http://192.168.199.201:8080/resourceService/ib");
+                            service.setTenant(tenant);
+
+                            tenant.addYawlService(service);
+
+                        }
+                        msg.append(proxyUtil.launchCase(specification,engine, (YawlService) tenant.getYawlServices().toArray()[0]));
                     } catch (ClassNotFoundException | NoSuchMethodException | NoSuchFieldException | InvocationTargetException | IllegalAccessException | IOException e) {
                    //     e.printStackTrace();
                         msg.append(YawlUtil.failureMessage(e.getMessage()));
@@ -86,6 +99,10 @@ public class IBServlet extends BaseServlet{
                     break;
                 case "getAllRunningCases":
                     msg.append(tenant.getAllRunningCasesResponse());
+                    break;
+                case "cancelCase":
+                    edu.sysu.data.Case c=proxyUtil.getCaseById(caseId);
+                    msg.append(proxyUtil.cancelCase(c));
                     break;
 
             }else{

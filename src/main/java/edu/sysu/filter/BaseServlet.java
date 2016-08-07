@@ -36,7 +36,11 @@ public abstract class BaseServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         logger.info(req.getRequestURI());
         logger.info(req.getMethod());
-        logger.info(req.getQueryString());
+        if(req.getParameter("action")!=null){
+            logger.info(req.getParameter("action"));
+        }
+
+
 
 
         OutputStreamWriter outputWriter = this.prepareResponse(resp);

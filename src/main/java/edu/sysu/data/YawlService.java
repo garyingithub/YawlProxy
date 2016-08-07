@@ -22,6 +22,14 @@ public class YawlService {
 
     private String name;
 
+    @org.hibernate.annotations.Type( type = "text" )
+    private String document;
+
+    private String password;
+
+    @ManyToOne
+
+    private Tenant tenant;
 
     public String getDocument() {
         return document;
@@ -31,8 +39,7 @@ public class YawlService {
         this.document = document;
     }
 
-    @org.hibernate.annotations.Type( type = "text" )
-    private String document;
+
 
 
     public String getPassword() {
@@ -43,7 +50,7 @@ public class YawlService {
         this.password = password;
     }
 
-    private String password;
+
 
     public long getId() {
         return id;
@@ -81,8 +88,8 @@ public class YawlService {
         return this.tenant.getTenantId()+":"+name;
     }
 
-    @ManyToOne
-    private Tenant tenant;
+
+
 
     public YawlService(){}
 

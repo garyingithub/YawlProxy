@@ -12,7 +12,6 @@ import java.util.Objects;
  * Created by gary on 16-7-26.
  */
 @Entity
-@Table(name="Cases")
 public class Case {
 
 
@@ -20,10 +19,6 @@ public class Case {
     @GeneratedValue(generator = "increment")
     @GenericGenerator(name = "increment",strategy = "increment")
     private Long caseId;
-
-    @NaturalId
-    @Column(unique = true,nullable = false)
-    private String outerId;
 
     private String innerId;
 
@@ -42,12 +37,12 @@ public class Case {
             return false;
         }
         Case c = (Case) o;
-        return Objects.equals( outerId, c.outerId );
+        return Objects.equals( caseId, c.caseId );
     }
 
     @Override
     public int hashCode(){
-        return Objects.hash(this.getOuterId());
+        return Objects.hash(this.caseId);
     }
 
     public Long getCaseId() {
@@ -67,13 +62,6 @@ public class Case {
         this.innerId = innerId;
     }
 
-    public String getOuterId() {
-        return outerId;
-    }
-
-    public void setOuterId(String outerId) {
-        this.outerId = outerId;
-    }
 
     public Specification getSpecification() {
         return specification;
