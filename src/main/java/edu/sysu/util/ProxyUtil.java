@@ -1,5 +1,7 @@
 package edu.sysu.util;
 
+import edu.sysu.cache.CaseCache;
+import edu.sysu.cache.SpecificationCache;
 import edu.sysu.data.*;
 import edu.sysu.data.repositories.TenantRepository;
 import edu.sysu.util.HibernateUtil;
@@ -27,149 +29,10 @@ import java.util.*;
 
 public class ProxyUtil {
 
-    private Map<String,Object> engines;
-
-    private Map<String,Object> tenants;
-
-    private Map<String ,Object> specifications;
-
-    private Map<String ,Object> cases;
-
-    private Map<String,Object> yawlServices;
-
-
-    public final String encryptedAdminPassword="Se4tMaQCi9gr0Q2usp7P56Sk5vM=";
-
-
-    private org.slf4j.Logger logger= LoggerFactory.getLogger(this.getClass());
-
-    private HibernateUtil hibernateUtil;
-
-
-    public ProxyUtil( RequestForwarder requestForwarder, SessionUtil sessionUtil, HibernateUtil hibernateUtil) throws ClassNotFoundException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InvocationTargetException {
-
-
-        this.requestForwarder = requestForwarder;
-        this.sessionUtil = sessionUtil;
-        this.hibernateUtil = hibernateUtil;
-
-        try {
-
-            engines= hibernateUtil.getObjectMap("Engine","edu.sysu.data.Engine","getEngineId");
-            tenants= hibernateUtil.getObjectMap("Tenant","edu.sysu.data.Tenant","getTenantId");
-            specifications=hibernateUtil.getObjectMap("Specification","edu.sysu.data.Specification","getIdAndVersion");
-            cases= hibernateUtil.getObjectMap("Case","edu.sysu.data.Case","getEngineIdAndInnerId");
-            yawlServices=hibernateUtil.getObjectMap("YawlService","edu.sysu.data.YawlService","getTenantIdAndName");
-
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
-
-        // init for testing
-        if(tenants.size()==0){
-            Tenant tenant=new Tenant();
-            tenant.setName("Peter");
-            this.storeObject("edu.sysu.data.Tenant","getTenantId","tenants",tenant);
-
-            Tenant tenant1=new Tenant();
-            tenant1.setName("Gary");
-
-            this.storeObject("edu.sysu.data.Tenant","getTenantId","tenants",tenant1);
-
-            Engine engine=new Engine();
-            engine.setUrl("http://192.168.199.175:8086");
-            this.storeObject("edu.sysu.data.Engine","getEngineId","engines",engine);
-
-            Engine engine1=new Engine();
-            engine1.setUrl("http://192.168.199.201:8080");
-            this.storeObject("edu.sysu.data.Engine","getEngineId","engines",engine1);
-
-            YawlService yawlService=new YawlService();
-            yawlService.setName("resourceService");
-            yawlService.setUri("http://192.168.199.175:8086/resourceService/ib");
-            yawlService.setDocument("resource");
-            yawlService.setPassword("resource");
-            yawlService.setTenant(tenant1);
-
-
-            this.storeObject("edu.sysu.data.YawlService","getTenantIdAndName","yawlServices",yawlService);
-
-
-        }
-
-    }
-
-
-    public Tenant getTenantByCaseId(String caseId){
-        Case c= this.getCaseByEngineIdAndInnerId(caseId);
-
-        return c.getSpecification().getTenant();
-    }
-
-    public Tenant getTenantBySpecificationNaturalId(String specificationNaturalId){
-        Specification specification= (Specification) this.specifications.get(specificationNaturalId);
-        return specification.getTenant();
-    }
-
-    public Tenant getTenantById(String tenantId){
-        return (Tenant) this.tenants.get(tenantId);
-    }
-
-
-
-    private Map getEngines(){
-        return this.engines;
-    }
-    Random random=new Random();
-    public Engine getTargetEngine(){
-
-
-        return (Engine) engines.values().toArray()[Math.abs(random.nextInt())%1];
-    }
-
-
-    public Engine getEngineById(String engineId)
-    {
-        return (Engine) this.getEngines().get(engineId);
-    }
-
-
-    public Specification getSpecificationByIdAndVersion(String idAndVersion){
-        logger.debug(String.format("get specification by %s",idAndVersion));
-        return (Specification) specifications.get(idAndVersion);
-    }
-
-
-
-    public YawlService getYawlServiceByTenantIdAndName(String tenantIdAndName){
-        return (YawlService) this.yawlServices.get(tenantIdAndName);
-    }
-
-
-
-    public Case getCaseByEngineIdAndInnerId(String EngineIdAndInnerId){
-       Case c=  (Case) cases.get(EngineIdAndInnerId);
-        // in case that the announceCaseStart arrive before launchCase finish
-        while (c==null){
-            c= (Case) cases.get(EngineIdAndInnerId);
-        }
-
-        return c;
-    }
-
-    public void storeObject(String  className,String idName,String rpFieldName,Object object) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
-
-        hibernateUtil.storeObject(object);
-        Map<String,Object> map= (Map<String, Object>) this.getClass().getDeclaredField(rpFieldName).get(this);
-        map.put(Class.forName(className).getDeclaredMethod(idName).invoke(object).toString(),object);
-
-        logger.debug("store an %s ",className);
-
-
-    }
-
     private RequestForwarder requestForwarder;
     private SessionUtil sessionUtil;
+    private CaseCache caseCache;
+    private SpecificationCache specificationCache;
 
 
     private void registerYawlService(YawlService yawlService,Engine engine) throws IOException {
@@ -241,19 +104,9 @@ public class ProxyUtil {
         c.setInnerId(caseInnerId);
         c.setSpecification(specification);
         c.setEngine(engine);
-
-
         specification.addCase(c);
-
         engine.addCase(c);
-        try {
-            this.storeObject("edu.sysu.data.Case","getEngineIdAndInnerId","cases",c);
-            hibernateUtil.updateObject(engine);
-            hibernateUtil.updateObject(specification);
-        }catch (Exception ex){
-            return ex.getMessage();
-        }
-
+        caseCache.storeCase(c);
 
 
         return result+"~"+engine.getIBUri()+"~"+sessionHandle;
@@ -286,9 +139,13 @@ public class ProxyUtil {
                     spec.setXML(YMarshal.marshal(specification));
                     spec.setTenant(tenant);
                     spec.setSpecificationUri(specification.getURI());
-                    this.specifications.put(spec.getIdAndVersion(),spec);
+                    try {
+                        specificationCache.storeSpecification(spec);
+                    } catch (ClassNotFoundException | NoSuchMethodException | NoSuchFieldException | InvocationTargetException | IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
                     tenant.addSpecification(spec);
-                    hibernateUtil.updateObject(tenant);
+
                 }
             }
         }
@@ -296,21 +153,9 @@ public class ProxyUtil {
 
     }
 
-    public void completeCase(edu.sysu.data.Case c){
-        c.getSpecification().getCases().remove(c);
-        c.getEngine().getCases().remove(c);
-        hibernateUtil.deleteObject(c);
-    }
 
-    public edu.sysu.data.Case getCaseById(String caseId){
-        for(Object o:this.cases.values()){
-            edu.sysu.data.Case c=(edu.sysu.data.Case)o;
-            if(caseId.equals(c.getCaseId().toString())){
-                return c;
-            }
-        }
-        return null;
-    }
+
+
     public String cancelCase(edu.sysu.data.Case c){
         Map<String,String> params=new HashMap<>();
         params.put("action","cancelCase");

@@ -12,6 +12,7 @@ import java.util.Objects;
  * Created by gary on 16-7-26.
  */
 @Entity
+@Table(name = "Cases")
 public class Case {
 
 
