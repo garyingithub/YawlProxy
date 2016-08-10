@@ -16,11 +16,16 @@ public class CaseCache {
     private Map<String,Object> outerCasesMap;
 
     private HibernateUtil hibernateUtil;
-    public CaseCache(HibernateUtil hibernateUtil) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public CaseCache(HibernateUtil hibernateUtil)   {
         this.hibernateUtil=hibernateUtil;
 
-        innerCasesMap = hibernateUtil.getObjectMap("Case", "edu.sysu.data.Case", "getCaseId");
-        outerCasesMap = hibernateUtil.getObjectMap("Case", "edu.sysu.data.Case", "getEngineIdAndInnerId");
+        try {
+            innerCasesMap = hibernateUtil.getObjectMap("Case", "edu.sysu.data.Case", "getCaseId");
+            outerCasesMap = hibernateUtil.getObjectMap("Case", "edu.sysu.data.Case", "getEngineIdAndInnerId");
+
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
 
     public void storeCase(Case c) throws ClassNotFoundException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InvocationTargetException {

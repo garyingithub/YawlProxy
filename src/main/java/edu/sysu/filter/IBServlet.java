@@ -49,9 +49,10 @@ public class IBServlet extends BaseServlet{
         String password=request.getParameter("password");
 
         String caseId=request.getParameter("caseID");
-        Specification specification=proxyUtil.getSpecificationByIdAndVersion(specIdentifier+":"+specVersion);
+        Specification specification=proxyUtil.specificationCache.
+                getSpecificationByIdAndVersion(specIdentifier+":"+specVersion);
 
-        Tenant tenant= proxyUtil.getTenantById(tenant_id_string);
+        Tenant tenant= proxyUtil.tenantCache.getTenantById(tenant_id_string);
 
         if(action!=null)
             switch (action){
@@ -75,7 +76,7 @@ public class IBServlet extends BaseServlet{
                 case "launchCase":
 
 
-                    Engine engine= proxyUtil.getTargetEngine();
+                    Engine engine= proxyUtil.engineCache.getTargetEngine();
                     try {
                         if(tenant.getYawlServices()==null||tenant.getYawlServices().size()==0){
                             YawlService service=new YawlService();
@@ -101,7 +102,7 @@ public class IBServlet extends BaseServlet{
                     msg.append(tenant.getAllRunningCasesResponse());
                     break;
                 case "cancelCase":
-                    edu.sysu.data.Case c=proxyUtil.getCaseById(caseId);
+                    edu.sysu.data.Case c=proxyUtil.caseCache.getCaseById(caseId);
                     msg.append(proxyUtil.cancelCase(c));
                     break;
 

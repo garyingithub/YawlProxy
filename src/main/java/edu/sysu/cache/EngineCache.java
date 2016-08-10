@@ -15,12 +15,16 @@ public class EngineCache {
 
     private HibernateUtil hibernateUtil;
 
-    public EngineCache(HibernateUtil hibernateUtil) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        engines = hibernateUtil.getObjectMap("Engine", "edu.sysu.data.Engine", "getEngineId");
+    public EngineCache(HibernateUtil hibernateUtil)  {
+        try {
+            engines = hibernateUtil.getObjectMap("Engine", "edu.sysu.data.Engine", "getEngineId");
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
         this.hibernateUtil=hibernateUtil;
     }
 
-    public void storeEngine(Engine engine) throws ClassNotFoundException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InvocationTargetException {
+    public void storeEngine(Engine engine)  {
         hibernateUtil.storeObject(engine);
         this.engines.put(engine.getEngineId().toString(),engine);
     }

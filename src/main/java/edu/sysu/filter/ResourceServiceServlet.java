@@ -42,11 +42,11 @@ public class ResourceServiceServlet extends BaseServlet{
 
 
         if(caseId!=null){
-            tenant= proxyUtil.getTenantByCaseId(engine_id_string+":"+caseId);
+            tenant= proxyUtil.caseCache.getTenantByCaseId(engine_id_string+":"+caseId);
         }
 
         if(tenant==null&&specificationId!=null){
-            tenant= proxyUtil.getTenantBySpecificationNaturalId(specificationId+":"+specVersion);
+            tenant= proxyUtil.specificationCache.getTenantBySpecificationNaturalId(specificationId+":"+specVersion);
         }
 
         if(tenant==null){
@@ -62,7 +62,7 @@ public class ResourceServiceServlet extends BaseServlet{
         while (enumeration.hasMoreElements()){
             String paramName=enumeration.nextElement();
             if(paramName.equals("caseID")){
-                params.put("caseID", proxyUtil.getCaseByEngineIdAndInnerId(
+                params.put("caseID", proxyUtil.caseCache.getCaseByEngineIdAndInnerId(
                         engine_id_string+":"+caseId).
                         getCaseId().
                         toString());
@@ -83,10 +83,10 @@ public class ResourceServiceServlet extends BaseServlet{
 
             switch (action){
                 case "announceCaseCompleted":
-                    edu.sysu.data.Case c=proxyUtil.
-                            getCaseByEngineIdAndInnerId(engine_id_string+":"+caseId);
+                    edu.sysu.data.Case c=proxyUtil.caseCache
+                            .getCaseByEngineIdAndInnerId(engine_id_string+":"+caseId);
                     if(c!=null)
-                        proxyUtil.completeCase(c);
+                        proxyUtil.caseCache.deleteCase(c);
                     break;
 
             }

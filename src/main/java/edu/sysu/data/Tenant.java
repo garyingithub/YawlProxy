@@ -1,18 +1,17 @@
 package edu.sysu.data;
 
-import javax.persistence.*;
-
 import edu.sysu.util.YawlUtil;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.IndexColumn;
 import org.hibernate.annotations.NaturalId;
-import edu.sysu.data.YawlService;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.XNode;
 
-import java.util.*;
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by gary on 16-7-24.

@@ -47,7 +47,7 @@ public class IAServlet extends BaseServlet{
 
         Tenant tenant=null;
         if(tenant_id_string!=null){
-            tenant= proxyUtil.getTenantById(tenant_id_string);
+            tenant= proxyUtil.tenantCache.getTenantById(tenant_id_string);
         }
 
 

@@ -15,13 +15,17 @@ public class YawlServiceCache {
 
     private HibernateUtil hibernateUtil;
 
-    public YawlServiceCache(HibernateUtil hibernateUtil) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public YawlServiceCache(HibernateUtil hibernateUtil)   {
         this.hibernateUtil=hibernateUtil;
-        yawlServices = hibernateUtil.getObjectMap("YawlService", "edu.sysu.data.YawlService", "getTenantIdAndName");
+        try {
+            yawlServices = hibernateUtil.getObjectMap("YawlService", "edu.sysu.data.YawlService", "getTenantIdAndName");
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
 
     }
 
-    public void storeYawlService(YawlService yawlService) throws ClassNotFoundException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InvocationTargetException {
+    public void storeYawlService(YawlService yawlService) {
         hibernateUtil.storeObject(yawlService);
         this.yawlServices.put(yawlService.getTenantIdAndName(),yawlService);
     }

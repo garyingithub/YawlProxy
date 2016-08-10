@@ -20,9 +20,13 @@ public class TenantCache {
 
     private HibernateUtil hibernateUtil;
 
-    public TenantCache(HibernateUtil hibernateUtil) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public TenantCache(HibernateUtil hibernateUtil) {
         this.hibernateUtil=hibernateUtil;
-        tenants = hibernateUtil.getObjectMap("Tenant", "edu.sysu.data.Tenant", "getTenantId");
+        try {
+            tenants = hibernateUtil.getObjectMap("Tenant", "edu.sysu.data.Tenant", "getTenantId");
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
 
     public void storeTenant(Tenant tenant){
@@ -34,6 +38,7 @@ public class TenantCache {
         return (Tenant) this.tenants.get(tenantId);
     }
 
+    public int getSize(){return tenants.size();}
 
 
 }

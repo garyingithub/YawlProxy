@@ -16,9 +16,13 @@ public class SpecificationCache {
 
     private HibernateUtil hibernateUtil;
 
-    public SpecificationCache(HibernateUtil hibernateUtil) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public SpecificationCache(HibernateUtil hibernateUtil)  {
         this.hibernateUtil=hibernateUtil;
-        specifications = hibernateUtil.getObjectMap("Specification", "edu.sysu.data.Specification", "getIdAndVersion");
+        try {
+            specifications = hibernateUtil.getObjectMap("Specification", "edu.sysu.data.Specification", "getIdAndVersion");
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
 
     }
     public void storeSpecification(Specification specification) throws ClassNotFoundException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InvocationTargetException {
