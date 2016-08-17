@@ -106,7 +106,7 @@ public class Specification {
         if ( this == o ) {
             return true;
         }
-        if ( !( o instanceof Case ) ) {
+        if ( !( o instanceof Specification ) ) {
             return false;
         }
         Specification c = (Specification) o;

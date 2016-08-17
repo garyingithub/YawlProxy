@@ -1,7 +1,11 @@
 package edu.sysu.util;
 
-import org.yawlfoundation.yawl.elements.YSpecification;
+import edu.sysu.data.Specification;
+import org.yawlfoundation.yawl.elements.*;
 import org.yawlfoundation.yawl.elements.data.YParameter;
+import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.exceptions.YSyntaxException;
+import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.unmarshal.YMetaData;
 import org.yawlfoundation.yawl.util.StringUtil;
 
@@ -89,6 +93,31 @@ public class YawlUtil {
             specs.append("</specificationData>");
         }
         return specs.toString();
+    }
+
+    public static YTask getTaskDefinition(Specification specID, String taskID) {
+        YTask task = null;
+
+        YSpecification spec= null;
+        try {
+            spec = YMarshal.unmarshalSpecifications(specID.getXML()).get(0);
+        } catch (YSyntaxException e) {
+            e.printStackTrace();
+        }
+        if (spec != null) {
+            Set<YDecomposition> decompositions = spec.getDecompositions();
+            for (YDecomposition decomposition : decompositions) {
+                if (decomposition instanceof YNet) {
+                    YNet net = (YNet) decomposition;
+                    YExternalNetElement element = net.getNetElement(taskID);
+                    if ((element != null) && (element instanceof YTask)) {
+                        task = (YTask) element;
+                        break;                                               // found it
+                    }
+                }
+            }
+        }
+        return task;
     }
 
 

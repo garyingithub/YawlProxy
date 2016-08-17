@@ -1,10 +1,12 @@
 package edu.sysu.filter;
 
+import edu.sysu.data.Engine;
 import edu.sysu.data.Tenant;
 import edu.sysu.data.YawlService;
 import edu.sysu.util.ProxyUtil;
 import edu.sysu.util.RequestForwarder;
 import edu.sysu.util.YawlUtil;
+import org.yawlfoundation.yawl.engine.YWorkItem;
 import org.yawlfoundation.yawl.engine.interfce.Marshaller;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 
@@ -36,9 +38,15 @@ public class ResourceServiceServlet extends BaseServlet{
         String specificationId=request.getParameter("specidentifier");
         String specVersion=request.getParameter("specversion");
         String caseId=request.getParameter("caseID");
+        String workItem=request.getParameter("workItem");
+        if(workItem!=null){
+            WorkItemRecord workItemRecord=Marshaller.unmarshalWorkItem(workItem);
+            caseId=workItemRecord.getRootCaseID();
+        }
 
 
         Tenant tenant=null;
+        Engine engine=proxyUtil.engineCache.getEngineById(engine_id_string);
 
 
         if(caseId!=null){
@@ -62,7 +70,11 @@ public class ResourceServiceServlet extends BaseServlet{
         while (enumeration.hasMoreElements()){
             String paramName=enumeration.nextElement();
             if(paramName.equals("caseID")){
-                params.put("caseID", proxyUtil.caseCache.getCaseByEngineIdAndInnerId(
+                if(action!=null && action.equals("announceCaseStarted")){
+                    params.put("caseID", caseId+"~"+engine.getIBUri());
+                }
+                else
+                    params.put("caseID", proxyUtil.caseCache.getCaseByEngineIdAndInnerId(
                         engine_id_string+":"+caseId).
                         getCaseId().
                         toString());
@@ -71,6 +83,8 @@ public class ResourceServiceServlet extends BaseServlet{
         }
 
 
+        edu.sysu.data.Case c=proxyUtil.caseCache
+                .getCaseByEngineIdAndInnerId(engine_id_string+":"+caseId);
         String response="";
         try {
             for(YawlService yawlService:yawlServiceSet){
@@ -83,11 +97,11 @@ public class ResourceServiceServlet extends BaseServlet{
 
             switch (action){
                 case "announceCaseCompleted":
-                    edu.sysu.data.Case c=proxyUtil.caseCache
-                            .getCaseByEngineIdAndInnerId(engine_id_string+":"+caseId);
+
                     if(c!=null)
                         proxyUtil.caseCache.deleteCase(c);
                     break;
+
 
             }
         }

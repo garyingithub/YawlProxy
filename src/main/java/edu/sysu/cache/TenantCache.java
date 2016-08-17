@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,6 +21,14 @@ public class TenantCache {
     private Logger logger= LoggerFactory.getLogger(this.getClass());
 
     private HibernateUtil hibernateUtil;
+
+    public List<Tenant> getTenants(){
+        List<Tenant> result=new ArrayList<>();
+        for(Object o:tenants.values()){
+            result.add((Tenant) o);
+        }
+        return result;
+    }
 
     public TenantCache(HibernateUtil hibernateUtil) {
         this.hibernateUtil=hibernateUtil;

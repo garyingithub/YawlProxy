@@ -47,6 +47,14 @@ public class Tenant {
         return tenantId;
     }
 
+    public Specification getSpecification(Specification specification){
+        for(Specification s:this.getSpecifications()){
+            if(s.equals(specification))
+                return s;
+        }
+        return null;
+    }
+
     public void setTenantId(Long tenantId) {
         this.tenantId = tenantId;
     }
@@ -118,12 +126,14 @@ public class Tenant {
         return builder.toString();
     }
 
+
     @Transient
     public String getAllRunningCasesResponse(){
 
 
         XNode node = new XNode("AllRunningCases");
         for (Specification specID : getSpecifications()) {
+
             XNode idNode = node.addChild("specificationID");
             idNode.addAttribute("identifier", specID.getSpecId());
             idNode.addAttribute("version", specID.getSpecVersion());

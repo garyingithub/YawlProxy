@@ -11,8 +11,10 @@ import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.elements.*;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
+import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.util.HttpURLValidator;
 import org.yawlfoundation.yawl.util.XNode;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
@@ -148,6 +150,8 @@ public class ProxyUtil {
         Case c = new Case();
         c.setInnerId(caseInnerId);
         c.setSpecification(specification);
+        tenantCache.getTenantById(specification.getTenant().getTenantId().toString()).
+                getSpecification(specification).addCase(c);
         c.setEngine(engine);
         specification.addCase(c);
         engine.addCase(c);
@@ -187,10 +191,11 @@ public class ProxyUtil {
                             YawlService yawlService;
                             if(yawlServiceGateway.getYawlService()!=null){
                                 YAWLServiceReference reference=yawlServiceGateway.getYawlService();
-                                yawlService=yawlServiceCache.getYawlServiceByTenantIdAndName(tenant.getTenantId()+":"+reference.getServiceName());
+                                yawlService=yawlServiceCache.getYawlServiceByUri(reference.getURI());
                                 reference.set_yawlServiceID(yawlService.getUri());
                             }else{
-                                yawlService=yawlServiceCache.getYawlServiceByTenantIdAndName(tenant.getTenantId()+":"+"resourceService");
+                                /*
+                                yawlService=yawlServiceCache.getYawlServiceByUri(tenant.getTenantId()+":"+"resourceService");
                                 YAWLServiceReference yawlServiceReference=new YAWLServiceReference();
                                 yawlServiceReference.set_assignable(true);
                                 yawlServiceReference.set_yawlServiceID(yawlService.getUri());
@@ -198,6 +203,7 @@ public class ProxyUtil {
                                 yawlServiceReference.set_servicePassword(yawlService.getPassword());
                                 yawlServiceReference.set_documentation(yawlService.getDocument());
                                 yawlServiceGateway.setYawlService(yawlServiceReference);
+                                */
                             }
 
                         }
@@ -234,6 +240,41 @@ public class ProxyUtil {
             return YawlUtil.failureMessage(e.getMessage());
         }
         return result;
+    }
+
+    public String addYawlService(YAWLServiceReference serviceReference,Tenant tenant){
+        if (null != serviceReference) {
+            if (null==yawlServiceCache.getYawlServiceByUri(serviceReference.getURI())) {
+                if (HttpURLValidator.validate(serviceReference.getURI()).startsWith("<success")) {
+
+                    YawlService service=YawlService.transformFromReference(serviceReference);
+                    service.setTenant(tenant);
+                    tenant.addYawlService(service);
+                    yawlServiceCache.storeYawlService(service);
+                    return "<success/>";
+
+                }
+                else {
+                    return YawlUtil.failureMessage("Service unresponsive: " + serviceReference.getURI());
+                }
+            } else {
+                return YawlUtil.failureMessage("Engine has already registered a service with " +
+                        "the same URI [" + serviceReference.getURI() + "]");
+            }
+        } else {
+            return YawlUtil.failureMessage("");
+        }
+    }
+
+    public String getTaskInformation(Specification specification,String taskId){
+
+
+        YTask task = YawlUtil.getTaskDefinition(specification,taskId);
+        if (task != null) {
+            return task.getInformation();
+        } else {
+            return YawlUtil.failureMessage("The was no task found with ID " + taskId);
+        }
     }
 
 

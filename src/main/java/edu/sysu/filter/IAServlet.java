@@ -9,6 +9,7 @@ import edu.sysu.util.SessionUtil;
 import edu.sysu.util.YawlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yawlfoundation.yawl.elements.YAWLServiceReference;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -34,7 +35,7 @@ public class IAServlet extends BaseServlet{
         String tenant_id_string="";
         if (folders.length<=3)
         {
-            tenant_id_string="0";
+            tenant_id_string="2";
         }
         else
              tenant_id_string = folders[3];
@@ -86,6 +87,15 @@ public class IAServlet extends BaseServlet{
             case "getBuildProperties":
                 msg.append(YawlUtil.getBuildProperties());
                 break;
+            case "newYAWLService":
+                YAWLServiceReference service = YAWLServiceReference.unmarshal(request.getParameter("service"));
+
+                msg.append(proxyUtil.addYawlService(service,tenant));
+                break;
+            case "getExternalDBGateways":
+                msg.append("<ExternalDBGateways/>");
+                break;
+
 
         }
 

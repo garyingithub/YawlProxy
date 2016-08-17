@@ -25,20 +25,20 @@ public abstract class BaseServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        logger.info(req.getRequestURI());
-        logger.info(req.getMethod());
-        logger.info(req.getQueryString());
+        //logger.info(req.getRequestURI());
+        //logger.info(req.getMethod());
+        //logger.info(req.getQueryString());
 
         doPost(req,resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        logger.info(req.getRequestURI());
-        logger.info(req.getMethod());
-        if(req.getParameter("action")!=null){
-            logger.info(req.getParameter("action"));
-        }
+        //logger.info(req.getRequestURI());
+        //logger.info(req.getMethod());
+        //if(req.getParameter("action")!=null){
+        //    logger.info(req.getParameter("action"));
+       // }
 
 
 

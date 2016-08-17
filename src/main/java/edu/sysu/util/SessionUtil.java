@@ -52,7 +52,7 @@ public class SessionUtil {
 
     public String connectToProxy(Tenant tenant,String userId){
 
-        logger.debug(String.format("Tenant %s 's user %s is connecting to the proxy",tenant.getTenantId(),userId ));
+        logger.info(String.format("Tenant %s 's user %s is connecting to the proxy",tenant.getTenantId(),userId ));
         if(!outerSessionMap.containsKey(tenant.getTenantId()+userId)){
             outerSessionMap.put(tenant.getTenantId()+userId, UUID.randomUUID().toString());
         }

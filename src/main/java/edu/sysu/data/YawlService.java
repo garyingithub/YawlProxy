@@ -2,6 +2,7 @@ package edu.sysu.data;
 
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.NaturalId;
+import org.yawlfoundation.yawl.elements.YAWLServiceReference;
 
 import javax.persistence.*;
 
@@ -51,6 +52,14 @@ public class YawlService {
     }
 
 
+    public static YawlService transformFromReference(YAWLServiceReference reference){
+        YawlService yawlService=new YawlService();
+        yawlService.setName(reference.get_serviceName());
+        yawlService.setPassword(reference.get_servicePassword());
+        yawlService.setUri(reference.getURI());
+        yawlService.setDocument(reference.get_documentation());
+        return yawlService;
+    }
 
     public long getId() {
         return id;

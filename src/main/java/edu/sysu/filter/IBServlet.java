@@ -52,6 +52,7 @@ public class IBServlet extends BaseServlet{
         Specification specification=proxyUtil.specificationCache.
                 getSpecificationByIdAndVersion(specIdentifier+":"+specVersion);
 
+        edu.sysu.data.Case c=proxyUtil.caseCache.getCaseById(caseId);
         Tenant tenant= proxyUtil.tenantCache.getTenantById(tenant_id_string);
 
         if(action!=null)
@@ -102,8 +103,15 @@ public class IBServlet extends BaseServlet{
                     msg.append(tenant.getAllRunningCasesResponse());
                     break;
                 case "cancelCase":
-                    edu.sysu.data.Case c=proxyUtil.caseCache.getCaseById(caseId);
+
                     msg.append(proxyUtil.cancelCase(c));
+                    break;
+                case "getEngineByCase":
+                    msg.append(c.getEngine().getIBUri());
+                    break;
+                case "taskInformation":
+                    String taskId=request.getParameter("taskID");
+                    msg.append(proxyUtil.getTaskInformation(specification,taskId));
                     break;
 
             }else{

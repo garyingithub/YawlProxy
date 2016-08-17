@@ -2,9 +2,8 @@ package edu.sysu;
 
 
 import edu.sysu.cache.*;
-import edu.sysu.filter.IAServlet;
-import edu.sysu.filter.IBServlet;
-import edu.sysu.filter.ResourceServiceServlet;
+import edu.sysu.filter.*;
+import edu.sysu.monitor.CaseMonitor;
 import edu.sysu.util.HibernateUtil;
 import edu.sysu.util.ProxyUtil;
 import edu.sysu.util.RequestForwarder;
@@ -27,6 +26,12 @@ public class YawlProxyApplication {
 
 
 
+    @Bean
+    public Monitor monitor(){
+        Monitor m= new Monitor(caseMonitor());
+        m.start();
+        return m;
+    }
 
     @Bean
     public HibernateUtil hibernateUtil(){
@@ -59,6 +64,8 @@ public class YawlProxyApplication {
         return new SessionUtil(requestForwarder(),hibernateUtil());
     }
 
+
+
     @Bean
     public ProxyUtil reverseProxy(){
 
@@ -85,6 +92,18 @@ public class YawlProxyApplication {
     @Bean ServletRegistrationBean servletRegistrationBean3(){
         return new ServletRegistrationBean(new ResourceServiceServlet(reverseProxy(),requestForwarder()),"/resourceService/*");
     }
+
+
+    @Bean
+    CaseMonitor caseMonitor(){
+        return new CaseMonitor(caseCache(),tenantCache());
+    }
+
+    //@Bean
+    //ServletRegistrationBean servletRegistrationBean4(){
+      //  return new ServletRegistrationBean(new MonitorServlet(caseMonitor()),"/myMonitor");
+
+//    }
 
 
 
